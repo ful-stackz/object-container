@@ -74,6 +74,11 @@ namespace ObjectContainer
                 throw new ArgumentNullException(nameof(service));
             }
 
+            if (implementation == null)
+            {
+                throw new ArgumentNullException(nameof(implementation));
+            }
+
             if (_registrations.Exists(x => x.Service == service && x.Key == key))
             {
                 throw new InvalidOperationException($"A registration for type {service.FullName} already exists!");

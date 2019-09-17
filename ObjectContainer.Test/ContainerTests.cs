@@ -13,14 +13,31 @@ namespace ObjectContainer.Tests
             _container = new Container();
         }
 
+        #region ResolveInstance
+
+        [Test]
+        public void ResolveInstance_ReturnsTheSameInstance_WhenResolvingSingletonWithPreRegisteredDependencies()
+        {
+            _container.RegisterInstance(typeof(string), "admin");
+            _container.RegisterInstance(typeof(Credentials), new Credentials("admin", "admin@example.com"));
+            _container.RegisterSingleton(typeof(IUser), typeof(User));
+
+            var instanceA = (IUser)_container.ResolveInstance(typeof(IUser));
+            var instanceB = (IUser)_container.ResolveInstance(typeof(IUser));
+
+            Assert.AreSame(instanceA, instanceB);
+        }
+
+        #endregion ResolveInstance
+
+        #region RegisterInstance
+
         [Test]
         public void RegisterInstance_CorrectlyRegistersSimpleInstance_WithNoKey()
         {
             double instance = 3.14d;
 
-            _container.RegisterInstance(typeof(double), instance);
-
-            Assert.AreEqual(instance, _container.ResolveInstance(typeof(double)));
+            Assert.DoesNotThrow(() => _container.RegisterInstance(typeof(double), instance));
         }
 
         [Test]
@@ -29,9 +46,7 @@ namespace ObjectContainer.Tests
             const string Key = "Pi";
             double instance = 3.14d;
 
-            _container.RegisterInstance(typeof(double), instance, Key);
-
-            Assert.AreEqual(instance, _container.ResolveInstance(typeof(double), Key));
+            Assert.DoesNotThrow(() => _container.RegisterInstance(typeof(double), instance, Key));
         }
 
         [Test]
@@ -73,6 +88,90 @@ namespace ObjectContainer.Tests
             _container.RegisterInstance(service, Instance, KeyA);
 
             Assert.DoesNotThrow(() => _container.RegisterInstance(service, Instance, KeyB));
+        }
+
+        #endregion RegisterInstance
+
+        #region RegisterSingleton
+
+        [Test]
+        public void RegisterSingleton_ThrowsException_WhenArgumentsInvalid()
+        {
+            Assert.Throws<ArgumentNullException>(
+                () => _container.RegisterSingleton(service: null, typeof(User)),
+                $"Expected {nameof(ArgumentNullException)} when providing null for parameter @service!");
+
+            Assert.Throws<ArgumentNullException>(
+                () => _container.RegisterSingleton(service: typeof(User), implementation: null),
+                $"Expected {nameof(ArgumentNullException)} when providing null for parameter @implementation!");
+        }
+
+        [Test]
+        public void RegisterSingleton_ThrowsException_WhenRegistrationAlreadyExistsNoKey()
+        {
+            _container.RegisterSingleton(typeof(User), typeof(User));
+
+            Assert.Throws<InvalidOperationException>(() => _container.RegisterSingleton(typeof(User), typeof(User)));
+        }
+
+        [Test]
+        public void RegisterSingleton_ThrowsException_WhenRegistrationAlreadyExistsWithSameKey()
+        {
+            const string Key = "User";
+
+            _container.RegisterSingleton(typeof(User), typeof(User), Key);
+
+            Assert.Throws<InvalidOperationException>(
+                () => _container.RegisterSingleton(typeof(User), typeof(User), Key));
+        }
+
+        [Test]
+        public void RegisterSingleton_RegistersInterfaceClassPair_Successfully()
+        {
+            Assert.DoesNotThrow(() => _container.RegisterSingleton(typeof(IUser), typeof(User)));
+        }
+
+        [Test]
+        public void RegisterSingleton_RegistersClassClassPairSuccessfully()
+        {
+            Assert.DoesNotThrow(() => _container.RegisterSingleton(typeof(User), typeof(User)));
+        }
+
+        #endregion RegisterSingleton
+
+        private interface IUser
+        {
+            string Name { get; }
+        }
+
+        private class User
+        {
+            public User(string name, Credentials credentials)
+            {
+                Name = name ?? throw new ArgumentNullException(nameof(name));
+                Credentials = credentials ?? throw new ArgumentNullException(nameof(credentials));
+            }
+
+            public User(string name, string username, string email)
+            {
+                Name = name ?? throw new ArgumentNullException(nameof(name));
+                Credentials = new Credentials(username, email);
+            }
+
+            public string Name { get; }
+            public Credentials Credentials { get; }
+        }
+
+        private class Credentials
+        {
+            public Credentials(string username, string email)
+            {
+                Username = username ?? throw new ArgumentNullException(nameof(username));
+                Email = email ?? throw new ArgumentNullException(nameof(email));
+            }
+
+            public string Username { get; }
+            public string Email { get; }
         }
     }
 }
