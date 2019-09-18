@@ -64,6 +64,33 @@ namespace ObjectContainer.Tests
             Assert.AreNotSame(instanceA, instanceB);
         }
 
+        [Test]
+        public void ResolveInstance_ThrowsException_WhenArgumentsInvalid()
+        {
+            Assert.Throws<ArgumentNullException>(
+                () => _container.ResolveInstance(service: null),
+                $"Expected {nameof(ArgumentNullException)} when providing null for parameter @service!");
+        }
+
+        [Test]
+        public void ResolveInstance_ReturnsNull_WhenThereIsNoRegistrationForTheSpecifiedService()
+        {
+            Assert.IsNull(_container.ResolveInstance(typeof(User)));
+        }
+
+        [Test]
+        public void ResolveInstance_ReturnsNewInstances_WhenResolvingPerRequestRegistrationsNoKey()
+        {
+            _container.RegisterInstance(typeof(string), "user");
+            _container.RegisterInstance(typeof(Credentials), new Credentials("user", "user@email.com"));
+            _container.RegisterPerRequest(typeof(IUser), typeof(User));
+
+            var instanceA = _container.ResolveInstance(typeof(IUser));
+            var instanceB = _container.ResolveInstance(typeof(IUser));
+
+            Assert.AreNotSame(instanceA, instanceB);
+        }
+
         #endregion ResolveInstance
 
         #region RegisterInstance
