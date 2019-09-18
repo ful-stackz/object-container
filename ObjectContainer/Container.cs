@@ -28,7 +28,8 @@ namespace ObjectContainer
                 object instance = registration.Handler?.Invoke(this) ?? CreateInstanceOf(registration.Implementation);
                 if (registration.IsSingleton)
                 {
-                    registration = registration.With(instance);
+                    _registrations[_registrations.FindIndex(x => x.Service == service && x.Key == key)] =
+                        registration.With(instance);
                 }
 
                 return instance;
