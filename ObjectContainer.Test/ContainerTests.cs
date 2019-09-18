@@ -27,6 +27,42 @@ namespace ObjectContainer.Tests
 
             Assert.AreSame(instanceA, instanceB);
         }
+        
+        [Test]
+        public void ResolveInstance_ReturnsTheSameInstance_WhenResolvingSingletonWithSameKeyFromMultipleRegistrations()
+        {
+            // Register dependencies for User
+            _container.RegisterInstance(typeof(string), "admin");
+            _container.RegisterInstance(typeof(Credentials), new Credentials("admin", "admin@example.com"));
+            // Register multiple singletons for IUser with different keys
+            const string AdminKey = "admin";
+            const string ModKey = "moderator";
+            _container.RegisterSingleton(typeof(IUser), typeof(User), AdminKey);
+            _container.RegisterSingleton(typeof(IUser), typeof(User), ModKey);
+
+            var instanceA = (IUser)_container.ResolveInstance(typeof(IUser), AdminKey);
+            var instanceB = (IUser)_container.ResolveInstance(typeof(IUser), AdminKey);
+
+            Assert.AreSame(instanceA, instanceB);
+        }
+
+        [Test]
+        public void ResolveInstance_ReturnsDifferentInstances_WhenResolvingSingletonWithDifferentKeyFromMultipleRegistrations()
+        {
+            // Register dependencies for User
+            _container.RegisterInstance(typeof(string), "admin");
+            _container.RegisterInstance(typeof(Credentials), new Credentials("admin", "admin@example.com"));
+            // Register multiple singletons for IUser with different keys
+            const string AdminKey = "admin";
+            const string ModKey = "moderator";
+            _container.RegisterSingleton(typeof(IUser), typeof(User), AdminKey);
+            _container.RegisterSingleton(typeof(IUser), typeof(User), ModKey);
+
+            var instanceA = (IUser)_container.ResolveInstance(typeof(IUser), AdminKey);
+            var instanceB = (IUser)_container.ResolveInstance(typeof(IUser), ModKey);
+
+            Assert.AreNotSame(instanceA, instanceB);
+        }
 
         #endregion ResolveInstance
 
@@ -144,7 +180,7 @@ namespace ObjectContainer.Tests
             string Name { get; }
         }
 
-        private class User
+        private class User : IUser
         {
             public User(string name, Credentials credentials)
             {
