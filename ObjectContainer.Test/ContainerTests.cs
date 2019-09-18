@@ -202,6 +202,38 @@ namespace ObjectContainer.Tests
 
         #endregion RegisterSingleton
 
+        #region RegisterPerRequest
+
+        [Test]
+        public void RegisterPerRequest_ThrowsException_WhenArgumentsInvalid()
+        {
+            Assert.Throws<ArgumentNullException>(
+                () => _container.RegisterPerRequest(service: null, implementation: typeof(User)),
+                $"Expected {nameof(ArgumentNullException)} when providing null for parameter @service!");
+        }
+
+        [Test]
+        public void RegisterPerRequest_ThrowsException_WhenRegistrationAlreadyExistsNoKey()
+        {
+            _container.RegisterPerRequest(typeof(IUser), typeof(User));
+
+            Assert.Throws<InvalidOperationException>(
+                () => _container.RegisterPerRequest(typeof(IUser), typeof(User)));
+        }
+
+        [Test]
+        public void RegisterPerRequest_ThrowsException_WhenRegistrationAlreadyExistsWithSameKey()
+        {
+            const string Key = "admin";
+
+            _container.RegisterPerRequest(typeof(IUser), typeof(User), Key);
+
+            Assert.Throws<InvalidOperationException>(
+                () => _container.RegisterPerRequest(typeof(IUser), typeof(User), Key));
+        }
+
+        #endregion RegisterPerRequest
+
         private interface IUser
         {
             string Name { get; }
